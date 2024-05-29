@@ -1,9 +1,8 @@
 import os
 import time
 import pandas as pd
-import numpy as np
 import regex as re
-from scipy.special import softmax
+from sklearn.preprocessing import normalize
 from sklearn.model_selection import ShuffleSplit
 
 if not os.path.exists('Data'):
@@ -88,10 +87,8 @@ label_names.append('substitution')
 df_discogem[label_names] = df_discogem[label_names].astype(float)
 df_pdtb[label_names] = df_pdtb[label_names].astype(float)
 
-df_discogem.replace(0.0, -np.inf, inplace=True)
-df_discogem[label_names] = softmax(df_discogem[label_names], axis=1)
-df_pdtb.replace(0.0, -np.inf, inplace=True)
-df_pdtb[label_names] = softmax(df_pdtb[label_names], axis=1)
+df_discogem[label_names] = normalize(df_discogem[label_names], norm='l1', axis=1)
+df_pdtb[label_names] = normalize(df_pdtb[label_names], norm='l1', axis=1)
 
 df_discogem['majority_level_3'] = df_discogem[label_names].idxmax(axis=1)
 df_pdtb['majority_level_3'] = df_pdtb[label_names].idxmax(axis=1)
