@@ -9,6 +9,10 @@ from transformers import AutoModel
 MODEL_NAME = 'roberta-base'
 BATCH_SIZE = 16
 
+NUMBER_OF_SENSES = {'level_1': 5,
+                    'level_2': 8,
+                    'level_3': 22}
+
 
 class Multi_IDDR_Dataset(torch.utils.data.Dataset):
     'Dataset class for multi-label implicit discourse relation regognition classification tasks.'
@@ -28,8 +32,28 @@ class Multi_IDDR_Dataset(torch.utils.data.Dataset):
         return self.labels.shape[0]
 
 
+class Multi_IDDR_Classifier(torch.nn.Module):
+    'Classification model for multi-label implicit discourse relation recognition.'
+    
+    def __init__(self, model_name, number_of_senses):
+        super().__init__()
+        self.pretrained_model   = AutoModel.from_pretrained(model_name)
+        self.classifier_level_1 = torch.nn.Linear(self.pretrained_model.config.hidden_size, number_of_senses['level_1'])
+        self.classifier_level_2 = torch.nn.Linear(self.pretrained_model.config.hidden_size, number_of_senses['level_2'])
+        self.classifier_level_3 = torch.nn.Linear(self.pretrained_model.config.hidden_size, number_of_senses['level_3'])
+    
+    def forward(self, input_ids, attention_mask):
+        llm_states = self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask)
+        hidden_state = llm_states.last_hidden_state
+        output = hidden_state[:, 0]
+        logits = {'classifier_level_1': self.classifier_level_1(output),
+                  'classifier_level_2': self.classifier_level_2(output),
+                  'classifier_level_3': self.classifier_level_3(output)}
+        return logits
+
+
 def create_dataloader(path):
-    'Create dataloader class for multi-label implicit discourse relation regognition data splits.'
+    'Create dataloader class for multi-label implicit discourse relation recognition data splits.'
     
     # read pre-processed data
     df = pd.read_csv(path)
@@ -61,4 +85,30 @@ validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 test_loader       = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 
 
-# print(train_loader.__getitem__(0))
+
+
+model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
+
+for batch_idx, batch in enumerate(train_loader):
+    model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
+    print(model_output['classifier_level_1'].shape)
+    print(batch['labels_level_1'].shape)
+    print(model_output['classifier_level_1'].view(-1, NUMBER_OF_SENSES['level_1']).shape)
+    print(batch['labels_level_1'].view(-1).shape)
+    print('\n')
+    print(model_output['classifier_level_2'].shape)
+    print(batch['labels_level_2'].shape)
+    print(model_output['classifier_level_2'].view(-1, NUMBER_OF_SENSES['level_2']).shape)
+    print(batch['labels_level_2'].view(-1).shape)
+    print('\n')
+    print(model_output['classifier_level_3'].shape)
+    print(batch['labels_level_3'].shape)
+    print(model_output['classifier_level_3'].view(-1, NUMBER_OF_SENSES['level_3']).shape)
+    print(batch['labels_level_3'].view(-1).shape)
+    print('\n')
+    # loss_level_1 = torch.nn.CrossEntropyLoss(model_output['classifier_level_1'].view(-1, NUMBER_OF_SENSES['level_1']),
+    #                                          batch['labels_level_1'].view(-1))
+    # loss_level_2 = torch.nn.CrossEntropyLoss(model_output['classifier_level_2'].view(-1, NUMBER_OF_SENSES['level_2']),
+    #                                          batch['labels_level_2'].view(-1))
+    # loss_level_3 = torch.nn.CrossEntropyLoss(model_output['classifier_level_3'].view(-1, NUMBER_OF_SENSES['level_3']),
+                                            #  batch['labels_level_3'].view(-1))
