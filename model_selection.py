@@ -44,8 +44,8 @@ class Multi_IDDR_Classifier(torch.nn.Module):
     
     def forward(self, input_ids, attention_mask):
         llm_states = self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask)
-        hidden_state = llm_states.last_hidden_state
-        output = hidden_state[:, 0]
+        last_hidden_state = llm_states.last_hidden_state
+        output = last_hidden_state[:, 0]
         logits = {'classifier_level_1': self.classifier_level_1(output),
                   'classifier_level_2': self.classifier_level_2(output),
                   'classifier_level_3': self.classifier_level_3(output)}
@@ -88,27 +88,15 @@ test_loader       = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 
 
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
+loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
+# loss_function = torch.nn.L1Loss(reduction='mean') # try this loss function
 
 for batch_idx, batch in enumerate(train_loader):
+
+    # forward pass
     model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
-    print(model_output['classifier_level_1'].shape)
-    print(batch['labels_level_1'].shape)
-    print(model_output['classifier_level_1'].view(-1, NUMBER_OF_SENSES['level_1']).shape)
-    print(batch['labels_level_1'].view(-1).shape)
-    print('\n')
-    print(model_output['classifier_level_2'].shape)
-    print(batch['labels_level_2'].shape)
-    print(model_output['classifier_level_2'].view(-1, NUMBER_OF_SENSES['level_2']).shape)
-    print(batch['labels_level_2'].view(-1).shape)
-    print('\n')
-    print(model_output['classifier_level_3'].shape)
-    print(batch['labels_level_3'].shape)
-    print(model_output['classifier_level_3'].view(-1, NUMBER_OF_SENSES['level_3']).shape)
-    print(batch['labels_level_3'].view(-1).shape)
-    print('\n')
-    # loss_level_1 = torch.nn.CrossEntropyLoss(model_output['classifier_level_1'].view(-1, NUMBER_OF_SENSES['level_1']),
-    #                                          batch['labels_level_1'].view(-1))
-    # loss_level_2 = torch.nn.CrossEntropyLoss(model_output['classifier_level_2'].view(-1, NUMBER_OF_SENSES['level_2']),
-    #                                          batch['labels_level_2'].view(-1))
-    # loss_level_3 = torch.nn.CrossEntropyLoss(model_output['classifier_level_3'].view(-1, NUMBER_OF_SENSES['level_3']),
-                                            #  batch['labels_level_3'].view(-1))
+
+    loss_level_1 = loss_function(model_output['classifier_level_1'], batch['labels_level_1'])
+    loss_level_2 = loss_function(model_output['classifier_level_2'], batch['labels_level_2'])
+    loss_level_3 = loss_function(model_output['classifier_level_3'], batch['labels_level_3'])
+    loss = loss_level_1 + loss_level_2 + loss_level_3
