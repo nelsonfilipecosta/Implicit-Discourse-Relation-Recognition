@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import numpy as np
 import torch
@@ -138,6 +139,40 @@ def train_loop(dataloader):
             # to do: log metrics on wandb
 
 
+def test_loop_single_label(dataloader):
+    'Validation and test loop of the classification model for single-labels.'
+
+    # group labels and predictions across all batches
+    labels_l1 = []
+    labels_l2 = []
+    labels_l3 = []
+    predictions_l1 = []
+    predictions_l2 = []
+    predictions_l3 = []
+
+    model.eval()
+
+    with torch.no_grad():
+
+        for batch_idx, batch in enumerate(dataloader):
+
+            # forward pass
+            model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
+
+            labels_l1.extend(torch.argmax(batch['labels_level_1'], dim=1).tolist())
+            labels_l2.extend(torch.argmax(batch['labels_level_2'], dim=1).tolist())
+            labels_l3.extend(torch.argmax(batch['labels_level_3'], dim=1).tolist())
+            predictions_l1.extend(torch.argmax(model_output['classifier_level_1'], dim=1).tolist())
+            predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
+            predictions_l3.extend(torch.argmax(model_output['classifier_level_3'], dim=1).tolist())
+        
+        f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
+        f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
+        f1_score_3, precision_3, recall_3 = get_single_metrics('Level-3', np.array(labels_l3), np.array(predictions_l3))
+
+        # to do: log metrics on wandb
+
+
 
 
 
@@ -163,5 +198,21 @@ optimizer = torch.optim.Adam(model.parameters(),
 
 for epoch in range(EPOCHS):
     
+    print('Starting training...')
+    start_time = time.time()
+    
     # train model
     train_loop(train_loader)
+    
+    # validate model
+    test_loop_single_label(validation_loader)
+
+    print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
+
+print('Starting testing...')
+start_time = time.time()
+
+# test model
+test_loop_single_label(test_loader)
+
+print(f'Total testing time: {(time.time()-start_time)/60:.2f} minutes')
