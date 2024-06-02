@@ -90,6 +90,26 @@ def get_loss(predictions, labels):
     return loss_level_1 + loss_level_2 + loss_level_3
 
 
+def train_loop(dataloader):
+    'Train loop of the classification model.'
+
+    model.train()
+
+    for batch_idx, batch in enumerate(dataloader):
+
+        # forward pass
+        model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
+        loss = get_loss(model_output, batch)
+
+        # backward pass
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+
+
+
+
 
 train_loader      = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
@@ -107,19 +127,11 @@ optimizer = torch.optim.Adam(model.parameters(),
                              eps=1e-8,
                              weight_decay=0,
                              amsgrad=False)
-# optimizer = torch.optim.AdamW(model.parameters()) # try this optimizer
+# optimizer = torch.optim.AdamW(model.parameters())              # try this optimizer
 # optimizer = torch.optim.SGD(model.parameters(), nesterov=True) # try this optimizer
-# optimizer = torch.optim.RMSprop(model.parameters()) # try this optimizer
+# optimizer = torch.optim.RMSprop(model.parameters())            # try this optimizer
 
-model.train()
-
-for batch_idx, batch in enumerate(train_loader):
-
-    # forward pass
-    model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
-    loss = get_loss(model_output, batch)
-
-    # backward pass
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+for epoch in range(EPOCHS):
+    
+    # train model
+    train_loop(train_loader)
