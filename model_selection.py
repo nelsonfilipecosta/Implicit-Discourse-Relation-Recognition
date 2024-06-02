@@ -7,11 +7,14 @@ from transformers import AutoModel
 
 
 MODEL_NAME = 'roberta-base'
+EPOCHS = 10
 BATCH_SIZE = 16
 
 NUMBER_OF_SENSES = {'level_1': 5,
                     'level_2': 8,
                     'level_3': 22}
+
+LEARNING_RATE = 1e-5
 
 
 class Multi_IDDR_Dataset(torch.utils.data.Dataset):
@@ -33,7 +36,7 @@ class Multi_IDDR_Dataset(torch.utils.data.Dataset):
 
 
 class Multi_IDDR_Classifier(torch.nn.Module):
-    'Classification model for multi-label implicit discourse relation recognition.'
+    'Multi-head classification model for multi-label implicit discourse relation recognition.'
     
     def __init__(self, model_name, number_of_senses):
         super().__init__()
@@ -78,6 +81,7 @@ def create_dataloader(path):
 
 
 def get_loss(predictions, labels):
+    'Calculate overall loss of the model as the sum of the cross entropy losses of each classification head.'
 
     loss_level_1 = loss_function(predictions['classifier_level_1'], labels['labels_level_1'])
     loss_level_2 = loss_function(predictions['classifier_level_2'], labels['labels_level_2'])
@@ -97,9 +101,25 @@ test_loader       = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
 loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
 # loss_function = torch.nn.L1Loss(reduction='mean') # try this loss function
+optimizer = torch.optim.Adam(model.parameters(),
+                             lr=LEARNING_RATE,
+                             betas=(0.9, 0.98), # check paper
+                             eps=1e-8,
+                             weight_decay=0,
+                             amsgrad=False)
+# optimizer = torch.optim.AdamW(model.parameters()) # try this optimizer
+# optimizer = torch.optim.SGD(model.parameters(), nesterov=True) # try this optimizer
+# optimizer = torch.optim.RMSprop(model.parameters()) # try this optimizer
+
+model.train()
 
 for batch_idx, batch in enumerate(train_loader):
 
     # forward pass
     model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
     loss = get_loss(model_output, batch)
+
+    # backward pass
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
