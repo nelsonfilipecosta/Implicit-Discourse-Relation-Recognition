@@ -77,6 +77,13 @@ def create_dataloader(path):
     return dataloader
 
 
+def get_loss(predictions, labels):
+
+    loss_level_1 = loss_function(predictions['classifier_level_1'], labels['labels_level_1'])
+    loss_level_2 = loss_function(predictions['classifier_level_2'], labels['labels_level_2'])
+    loss_level_3 = loss_function(predictions['classifier_level_3'], labels['labels_level_3'])
+    
+    return loss_level_1 + loss_level_2 + loss_level_3
 
 
 
@@ -95,8 +102,4 @@ for batch_idx, batch in enumerate(train_loader):
 
     # forward pass
     model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
-
-    loss_level_1 = loss_function(model_output['classifier_level_1'], batch['labels_level_1'])
-    loss_level_2 = loss_function(model_output['classifier_level_2'], batch['labels_level_2'])
-    loss_level_3 = loss_function(model_output['classifier_level_3'], batch['labels_level_3'])
-    loss = loss_level_1 + loss_level_2 + loss_level_3
+    loss = get_loss(model_output, batch)
