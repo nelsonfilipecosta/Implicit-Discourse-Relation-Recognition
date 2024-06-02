@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import torch
 import transformers
+from sklearn import metrics
 from transformers import AutoTokenizer
 from transformers import AutoModel
 
@@ -90,6 +91,19 @@ def get_loss(predictions, labels):
     return loss_level_1 + loss_level_2 + loss_level_3
 
 
+# get weighted metrics
+def get_single_metrics(level, labels, predictions):
+    'Get f1-score, precision and recall metrics for single-label classification.'
+
+    f1_score    = metrics.f1_score(labels, predictions, average='weighted', zero_division=0)
+    precision   = metrics.precision_score(labels, predictions, average='weighted', zero_division=0)
+    recall      = metrics.recall_score(labels, predictions, average='weighted', zero_division=0)
+    
+    print(level + f' || F1-Score: {f1_score:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f}')
+    
+    return f1_score, precision, recall
+
+
 def train_loop(dataloader):
     'Train loop of the classification model.'
 
@@ -106,6 +120,22 @@ def train_loop(dataloader):
         loss.backward()
         optimizer.step()
 
+        # log results every 10 batches
+        if not batch_idx % 10:
+
+            print(f'Epoch: {epoch+1:02d}/{EPOCHS:02d} | Batch: {batch_idx:04d}/{len(train_loader):04d} | Loss: {loss:.4f}')
+
+            f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1',
+                                                                   torch.argmax(batch['labels_level_1'], dim=1).numpy(),
+                                                                   torch.argmax(model_output['classifier_level_1'], dim=1).numpy())
+            f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2',
+                                                                   torch.argmax(batch['labels_level_2'], dim=1).numpy(),
+                                                                   torch.argmax(model_output['classifier_level_2'], dim=1).numpy())
+            f1_score_3, precision_3, recall_3 = get_single_metrics('Level-3',
+                                                                   torch.argmax(batch['labels_level_3'], dim=1).numpy(),
+                                                                   torch.argmax(model_output['classifier_level_3'], dim=1).numpy())
+            
+            # to do: log metrics on wandb
 
 
 
