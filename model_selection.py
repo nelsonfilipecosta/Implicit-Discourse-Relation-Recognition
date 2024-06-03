@@ -1,4 +1,5 @@
 import time
+import wandb
 import pandas as pd
 import numpy as np
 import torch
@@ -9,7 +10,7 @@ from transformers import AutoModel
 
 
 MODEL_NAME = 'roberta-base'
-EPOCHS = 10
+EPOCHS = 1
 BATCH_SIZE = 16
 
 NUMBER_OF_SENSES = {'level_1': 5,
@@ -17,6 +18,14 @@ NUMBER_OF_SENSES = {'level_1': 5,
                     'level_3': 22}
 
 LEARNING_RATE = 1e-5
+
+WANDB = 1 # set to 0 for local runs
+if WANDB == 1:
+    wandb.login()
+    run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
+                                                 'Epochs': EPOCHS,
+                                                 'Batch Size:': BATCH_SIZE,
+                                                 'Learning Rate': LEARNING_RATE})
 
 
 class Multi_IDDR_Dataset(torch.utils.data.Dataset):
@@ -92,7 +101,6 @@ def get_loss(predictions, labels):
     return loss_level_1 + loss_level_2 + loss_level_3
 
 
-# get weighted metrics
 def get_single_metrics(level, labels, predictions):
     'Get f1-score, precision and recall metrics for single-label classification.'
 
@@ -100,9 +108,25 @@ def get_single_metrics(level, labels, predictions):
     precision   = metrics.precision_score(labels, predictions, average='weighted', zero_division=0)
     recall      = metrics.recall_score(labels, predictions, average='weighted', zero_division=0)
     
-    print(level + f' || F1-Score: {f1_score:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f}')
+    print(level + f' || F1 Score: {f1_score:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f}')
     
     return f1_score, precision, recall
+
+def log_wandb(epoch, batch, loss, f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3):
+    'Log metrics on Weights & Biases.'
+
+    wandb.log({'Epoch': epoch+1,
+               'Batch': batch,
+               'Loss' : loss,
+               'F1 Score (Level-1)' : f1_score_1,
+               'Precision (Level-1)': precision_1,
+               'Recall (Level-1)'   : recall_1,
+               'F1 Score (Level-2)' : f1_score_2,
+               'Precision (Level-2)': precision_2,
+               'Recall (Level-2)'   : recall_2,
+               'F1 Score (Level-3)' : f1_score_3,
+               'Precision (Level-3)': precision_3,
+               'Recall (Level-3)'   : recall_3})
 
 
 def train_loop(dataloader):
@@ -136,7 +160,8 @@ def train_loop(dataloader):
                                                                    torch.argmax(batch['labels_level_3'], dim=1).numpy(),
                                                                    torch.argmax(model_output['classifier_level_3'], dim=1).numpy())
             
-            # to do: log metrics on wandb
+            if WANDB == 1:
+                log_wandb(epoch, batch_idx, loss, f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3)
 
 
 def test_loop_single_label(dataloader):
@@ -170,18 +195,12 @@ def test_loop_single_label(dataloader):
         f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
         f1_score_3, precision_3, recall_3 = get_single_metrics('Level-3', np.array(labels_l3), np.array(predictions_l3))
 
-        # to do: log metrics on wandb
-
-
 
 
 
 train_loader      = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 test_loader       = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
-
-
-
 
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
 loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
@@ -204,6 +223,8 @@ for epoch in range(EPOCHS):
     # train model
     train_loop(train_loader)
     
+    print('Validation step...')
+
     # validate model
     test_loop_single_label(validation_loader)
 
