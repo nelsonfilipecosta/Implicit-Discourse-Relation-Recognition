@@ -4,13 +4,16 @@ import pandas as pd
 import numpy as np
 import torch
 import transformers
-from sklearn import metrics
 from transformers import AutoTokenizer
 from transformers import AutoModel
+from sklearn import metrics
+from sklearn.preprocessing import normalize
+from scipy.stats import entropy
+from scipy.spatial.distance import jensenshannon
 
 
 MODEL_NAME = 'roberta-base'
-EPOCHS = 1
+EPOCHS = 10
 BATCH_SIZE = 16
 
 NUMBER_OF_SENSES = {'level_1': 5,
@@ -19,12 +22,12 @@ NUMBER_OF_SENSES = {'level_1': 5,
 
 LEARNING_RATE = 1e-5
 
-WANDB = 1 # set to 0 for local runs
+WANDB = 0 # set 1 for logging and 0 for local runs
 if WANDB == 1:
     wandb.login()
     run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
                                                  'Epochs': EPOCHS,
-                                                 'Batch Size:': BATCH_SIZE,
+                                                 'Batch Size': BATCH_SIZE,
                                                  'Learning Rate': LEARNING_RATE})
 
 
@@ -91,6 +94,20 @@ def create_dataloader(path):
     return dataloader
 
 
+def log_wandb(f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3):
+    'Log metrics on Weights & Biases.'
+
+    wandb.log({'F1 Score (Level-1)' : f1_score_1,
+               'Precision (Level-1)': precision_1,
+               'Recall (Level-1)'   : recall_1,
+               'F1 Score (Level-2)' : f1_score_2,
+               'Precision (Level-2)': precision_2,
+               'Recall (Level-2)'   : recall_2,
+               'F1 Score (Level-3)' : f1_score_3,
+               'Precision (Level-3)': precision_3,
+               'Recall (Level-3)'   : recall_3})
+
+
 def get_loss(predictions, labels):
     'Calculate overall loss of the model as the sum of the cross entropy losses of each classification head.'
 
@@ -99,6 +116,70 @@ def get_loss(predictions, labels):
     loss_level_3 = loss_function(predictions['classifier_level_3'], labels['labels_level_3'])
     
     return loss_level_1 + loss_level_2 + loss_level_3
+
+
+def normalize_prob_distribution(distribution):
+    'Shift values in a probability distribution so that they are all positive and apply l1 normalization so that thay add to 1.'
+
+    shifted_distribution = distribution - np.min(distribution)
+    normalized_distribution = normalize(shifted_distribution.reshape(1, -1), norm='l1')
+
+    return normalized_distribution.reshape(-1)
+
+
+def shift_prob_distribution(distribution, margin):
+    'Marginally shift and renormalize probability distribution to avoid division by 0 in KL and JS distance calculation.'
+
+    shifted_distribution = distribution + margin
+    normalized_distribution = normalize(shifted_distribution.reshape(1, -1), norm='l1')
+
+    return normalized_distribution.reshape(-1)
+
+
+def get_kl_distance(labels, predictions):
+    'Calculate the average of the Kullback–Leibler distance between two probability distributions over all instances in a batch.'
+
+    kl_distance = 0
+
+    for i in range(BATCH_SIZE):
+        true_distribution = labels[i].detach().numpy()
+        true_distribution = shift_prob_distribution(true_distribution, 0.01) # shift distribution to avoid division by 0
+        predicted_distribution = normalize_prob_distribution(predictions[i].detach().numpy())
+        predicted_distribution = shift_prob_distribution(predicted_distribution, 0.01) # shift distribution to avoid division by 0
+
+        kl_distance += entropy(true_distribution, predicted_distribution, base=2)
+
+    return kl_distance / BATCH_SIZE
+
+
+def get_js_distance(labels, predictions):
+    'Calculate the average of the Jensen–Shannon distance between two probability distributions over all instances in a batch.'
+
+    js_distance = 0
+
+    for i in range(BATCH_SIZE):
+        true_distribution = labels[i].detach().numpy()
+        true_distribution = shift_prob_distribution(true_distribution, 0.01) # shift distribution to avoid division by 0
+        predicted_distribution = normalize_prob_distribution(predictions[i].detach().numpy())
+        predicted_distribution = shift_prob_distribution(predicted_distribution, 0.01) # shift distribution to avoid division by 0
+
+        js_distance += jensenshannon(true_distribution, predicted_distribution, base=2)
+
+    return js_distance / BATCH_SIZE
+
+
+def get_hell_distance(labels, predictions):
+    'Calculate the average of the Hellinger distance between two probability distributions over all instances in a batch.'
+
+    hell_distance = 0
+
+    for i in range(BATCH_SIZE):
+        true_distribution = labels[i].detach().numpy()
+        predicted_distribution = normalize_prob_distribution(predictions[i].detach().numpy())
+
+        hell_distance += np.sqrt(np.sum((np.sqrt(true_distribution)-np.sqrt(predicted_distribution))**2)) / np.sqrt(2)
+
+    return hell_distance / BATCH_SIZE
 
 
 def get_single_metrics(level, labels, predictions):
@@ -111,22 +192,6 @@ def get_single_metrics(level, labels, predictions):
     print(level + f' || F1 Score: {f1_score:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f}')
     
     return f1_score, precision, recall
-
-def log_wandb(epoch, batch, loss, f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3):
-    'Log metrics on Weights & Biases.'
-
-    wandb.log({'Epoch': epoch+1,
-               'Batch': batch,
-               'Loss' : loss,
-               'F1 Score (Level-1)' : f1_score_1,
-               'Precision (Level-1)': precision_1,
-               'Recall (Level-1)'   : recall_1,
-               'F1 Score (Level-2)' : f1_score_2,
-               'Precision (Level-2)': precision_2,
-               'Recall (Level-2)'   : recall_2,
-               'F1 Score (Level-3)' : f1_score_3,
-               'Precision (Level-3)': precision_3,
-               'Recall (Level-3)'   : recall_3})
 
 
 def train_loop(dataloader):
@@ -161,7 +226,7 @@ def train_loop(dataloader):
                                                                    torch.argmax(model_output['classifier_level_3'], dim=1).numpy())
             
             if WANDB == 1:
-                log_wandb(epoch, batch_idx, loss, f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3)
+                log_wandb(f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3)
 
 
 def test_loop_single_label(dataloader):
@@ -220,12 +285,10 @@ for epoch in range(EPOCHS):
     print('Starting training...')
     start_time = time.time()
     
-    # train model
     train_loop(train_loader)
     
     print('Validation step...')
 
-    # validate model
     test_loop_single_label(validation_loader)
 
     print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
@@ -233,7 +296,6 @@ for epoch in range(EPOCHS):
 print('Starting testing...')
 start_time = time.time()
 
-# test model
 test_loop_single_label(test_loader)
 
 print(f'Total testing time: {(time.time()-start_time)/60:.2f} minutes')
