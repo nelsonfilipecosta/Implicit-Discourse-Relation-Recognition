@@ -22,7 +22,7 @@ NUMBER_OF_SENSES = {'level_1': 5,
 
 LEARNING_RATE = 1e-5
 
-WANDB = 0 # set 1 for logging and 0 for local runs
+WANDB = 1 # set 1 for logging and 0 for local runs
 if WANDB == 1:
     wandb.login()
     run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
@@ -94,18 +94,36 @@ def create_dataloader(path):
     return dataloader
 
 
-def log_wandb(f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3):
+def log_wandb(mode, js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, precision_2, recall_2, js_3, f1_score_3, precision_3, recall_3, loss=None):
     'Log metrics on Weights & Biases.'
 
-    wandb.log({'F1 Score (Level-1)' : f1_score_1,
-               'Precision (Level-1)': precision_1,
-               'Recall (Level-1)'   : recall_1,
-               'F1 Score (Level-2)' : f1_score_2,
-               'Precision (Level-2)': precision_2,
-               'Recall (Level-2)'   : recall_2,
-               'F1 Score (Level-3)' : f1_score_3,
-               'Precision (Level-3)': precision_3,
-               'Recall (Level-3)'   : recall_3})
+    if mode == 'Training':
+        wandb.log({mode + ' JS Distance (Level-1)': js_1,
+                   mode + ' F1 Score (Level-1)'   : f1_score_1,
+                   mode + ' Precision (Level-1)'  : precision_1,
+                   mode + ' Recall (Level-1)'     : recall_1,
+                   mode + ' JS Distance (Level-2)': js_2,
+                   mode + ' F1 Score (Level-2)'   : f1_score_2,
+                   mode + ' Precision (Level-2)'  : precision_2,
+                   mode + ' Recall (Level-2)'     : recall_2,
+                   mode + ' JS Distance (Level-3)': js_3,
+                   mode + ' F1 Score (Level-3)'   : f1_score_3,
+                   mode + ' Precision (Level-3)'  : precision_3,
+                   mode + ' Recall (Level-3)'     : recall_3,
+                   mode + ' Loss'                  : loss})
+    else: 
+        wandb.log({mode + ' JS Distance (Level-1)': js_1,
+                   mode + ' F1 Score (Level-1)'   : f1_score_1,
+                   mode + ' Precision (Level-1)'  : precision_1,
+                   mode + ' Recall (Level-1)'     : recall_1,
+                   mode + ' JS Distance (Level-2)': js_2,
+                   mode + ' F1 Score (Level-2)'   : f1_score_2,
+                   mode + ' Precision (Level-2)'  : precision_2,
+                   mode + ' Recall (Level-2)'     : recall_2,
+                   mode + ' JS Distance (Level-3)': js_3,
+                   mode + ' F1 Score (Level-3)'   : f1_score_3,
+                   mode + ' Precision (Level-3)'  : precision_3,
+                   mode + ' Recall (Level-3)'     : recall_3})
 
 
 def get_loss(predictions, labels):
@@ -136,50 +154,56 @@ def shift_prob_distribution(distribution, margin):
     return normalized_distribution.reshape(-1)
 
 
-def get_kl_distance(labels, predictions):
+def get_kl_distance(level, labels, predictions):
     'Calculate the average of the Kullback–Leibler distance between two probability distributions over all instances in a batch.'
 
     kl_distance = 0
 
-    for i in range(BATCH_SIZE):
+    for i in range(labels.size(dim=0)):
         true_distribution = labels[i].detach().numpy()
-        true_distribution = shift_prob_distribution(true_distribution, 0.01) # shift distribution to avoid division by 0
+        true_distribution = shift_prob_distribution(true_distribution, 0.001) # shift distribution to avoid division by 0
         predicted_distribution = normalize_prob_distribution(predictions[i].detach().numpy())
-        predicted_distribution = shift_prob_distribution(predicted_distribution, 0.01) # shift distribution to avoid division by 0
+        predicted_distribution = shift_prob_distribution(predicted_distribution, 0.001) # shift distribution to avoid division by 0
 
         kl_distance += entropy(true_distribution, predicted_distribution, base=2)
 
-    return kl_distance / BATCH_SIZE
+    print(level + f' || KL Distance: {kl_distance / labels.size(dim=0):.4f}')
+
+    return kl_distance / labels.size(dim=0)
 
 
-def get_js_distance(labels, predictions):
+def get_js_distance(level, labels, predictions):
     'Calculate the average of the Jensen–Shannon distance between two probability distributions over all instances in a batch.'
 
     js_distance = 0
 
-    for i in range(BATCH_SIZE):
+    for i in range(labels.size(dim=0)):
         true_distribution = labels[i].detach().numpy()
-        true_distribution = shift_prob_distribution(true_distribution, 0.01) # shift distribution to avoid division by 0
+        true_distribution = shift_prob_distribution(true_distribution, 0.001) # shift distribution to avoid division by 0
         predicted_distribution = normalize_prob_distribution(predictions[i].detach().numpy())
-        predicted_distribution = shift_prob_distribution(predicted_distribution, 0.01) # shift distribution to avoid division by 0
+        predicted_distribution = shift_prob_distribution(predicted_distribution, 0.001) # shift distribution to avoid division by 0
 
         js_distance += jensenshannon(true_distribution, predicted_distribution, base=2)
 
-    return js_distance / BATCH_SIZE
+    print(level + f' || JS Distance: {js_distance / labels.size(dim=0):.4f}')
+
+    return js_distance / labels.size(dim=0)
 
 
-def get_hell_distance(labels, predictions):
+def get_hell_distance(level, labels, predictions):
     'Calculate the average of the Hellinger distance between two probability distributions over all instances in a batch.'
 
     hell_distance = 0
 
-    for i in range(BATCH_SIZE):
+    for i in range(labels.size(dim=0)):
         true_distribution = labels[i].detach().numpy()
         predicted_distribution = normalize_prob_distribution(predictions[i].detach().numpy())
 
         hell_distance += np.sqrt(np.sum((np.sqrt(true_distribution)-np.sqrt(predicted_distribution))**2)) / np.sqrt(2)
+    
+    print(level + f' || Hellinger Distance: {hell_distance / labels.size(dim=0):.4f}')
 
-    return hell_distance / BATCH_SIZE
+    return hell_distance / labels.size(dim=0)
 
 
 def get_single_metrics(level, labels, predictions):
@@ -213,7 +237,11 @@ def train_loop(dataloader):
         # log results every 10 batches
         if not batch_idx % 10:
 
-            print(f'Epoch: {epoch+1:02d}/{EPOCHS:02d} | Batch: {batch_idx:04d}/{len(train_loader):04d} | Loss: {loss:.4f}')
+            print(f'Epoch: {epoch+1:02d}/{EPOCHS:02d} | Batch: {batch_idx:04d}/{len(dataloader):04d} | Loss: {loss:.4f}')
+
+            js_1 = get_js_distance('Level-1', batch['labels_level_1'], model_output['classifier_level_1'])
+            js_2 = get_js_distance('Level-2', batch['labels_level_2'], model_output['classifier_level_2'])
+            js_3 = get_js_distance('Level-3', batch['labels_level_3'], model_output['classifier_level_3'])
 
             f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1',
                                                                    torch.argmax(batch['labels_level_1'], dim=1).numpy(),
@@ -226,13 +254,16 @@ def train_loop(dataloader):
                                                                    torch.argmax(model_output['classifier_level_3'], dim=1).numpy())
             
             if WANDB == 1:
-                log_wandb(f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3)
+                log_wandb('Training', js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, precision_2, recall_2, js_3, f1_score_3, precision_3, recall_3, loss)
 
 
-def test_loop_single_label(dataloader):
-    'Validation and test loop of the classification model for single-labels.'
+def test_loop(mode, dataloader):
+    'Validation and test loop of the classification model.'
 
-    # group labels and predictions across all batches
+    # group metric across all batches
+    js_1 = 0
+    js_2 = 0
+    js_3 = 0
     labels_l1 = []
     labels_l2 = []
     labels_l3 = []
@@ -249,23 +280,34 @@ def test_loop_single_label(dataloader):
             # forward pass
             model_output = model(input_ids=batch['input_ids'], attention_mask=batch['attention_mask'])
 
+            js_1 += get_js_distance('Level-1', batch['labels_level_1'], model_output['classifier_level_1'])
+            js_2 += get_js_distance('Level-2', batch['labels_level_2'], model_output['classifier_level_2'])
+            js_3 += get_js_distance('Level-3', batch['labels_level_3'], model_output['classifier_level_3'])
+
             labels_l1.extend(torch.argmax(batch['labels_level_1'], dim=1).tolist())
             labels_l2.extend(torch.argmax(batch['labels_level_2'], dim=1).tolist())
             labels_l3.extend(torch.argmax(batch['labels_level_3'], dim=1).tolist())
             predictions_l1.extend(torch.argmax(model_output['classifier_level_1'], dim=1).tolist())
             predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
             predictions_l3.extend(torch.argmax(model_output['classifier_level_3'], dim=1).tolist())
-        
-        f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
-        f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
-        f1_score_3, precision_3, recall_3 = get_single_metrics('Level-3', np.array(labels_l3), np.array(predictions_l3))
+
+    js_1 = js_1 / len(dataloader)
+    js_2 = js_2 / len(dataloader)
+    js_3 = js_3 / len(dataloader)
+
+    f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
+    f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
+    f1_score_3, precision_3, recall_3 = get_single_metrics('Level-3', np.array(labels_l3), np.array(predictions_l3))
+    
+    if WANDB == 1:
+        log_wandb(mode, js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, precision_2, recall_2, js_3, f1_score_3, precision_3, recall_3)
 
 
 
 
-train_loader      = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
+train_loader      = create_dataloader('Data/DiscoGeM/discogem_train.csv')
 validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
-test_loader       = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
+test_loader       = create_dataloader('Data/DiscoGeM/discogem_test.csv')
 
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
 loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
@@ -280,22 +322,13 @@ optimizer = torch.optim.Adam(model.parameters(),
 # optimizer = torch.optim.SGD(model.parameters(), nesterov=True) # try this optimizer
 # optimizer = torch.optim.RMSprop(model.parameters())            # try this optimizer
 
-for epoch in range(EPOCHS):
-    
-    print('Starting training...')
-    start_time = time.time()
-    
-    train_loop(train_loader)
-    
-    print('Validation step...')
-
-    test_loop_single_label(validation_loader)
-
-    print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
-
-print('Starting testing...')
+print('Starting training...')
 start_time = time.time()
 
-test_loop_single_label(test_loader)
+for epoch in range(EPOCHS):
+    train_loop(train_loader)
+    test_loop('Validation', validation_loader)
 
-print(f'Total testing time: {(time.time()-start_time)/60:.2f} minutes')
+test_loop('Testing', test_loader)
+
+print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
