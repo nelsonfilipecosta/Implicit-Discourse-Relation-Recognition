@@ -142,8 +142,48 @@ df['arg1_arg2'] = df['arg1'].copy() + ' ' + df['arg2'].copy()
 df = df[['folder', 'file', 'arg1', 'arg2', 'arg1_arg2', 'connective', 'sense', 'sense_final', 'sense1', 'sense2', 'sense3',
          'multi_connective', 'multi_sense', 'multi_sense_final', 'multi_sense1', 'multi_sense2', 'multi_sense3']]
 
-df = df[df['sense2'].isin(['Synchronous', 'Asynchronous', 'Cause', 'Cause+Belief', 'Condition', 'Purpose', 'Concession', 'Contrast',
+df = df[df['sense2'].isin(['Synchronous', 'Asynchronous', 'Cause', 'Condition', 'Purpose', 'Concession', 'Contrast', 'Similarity',
                            'Conjunction', 'Equivalence', 'Instantiation', 'Level-of-detail', 'Manner', 'Substitution'])]
+
+df['majority_level_2'] = df['sense2']
+df['synchronous'] = 0.0
+df['asynchronous'] = 0.0
+df['cause'] = 0.0
+df['condition'] = 0.0
+df['purpose'] = 0.0
+df['concession'] = 0.0
+df['contrast'] = 0.0
+df['similarity'] = 0.0
+df['conjunction'] = 0.0
+df['equivalence'] = 0.0
+df['instantiation'] = 0.0
+df['level-of-detail'] = 0.0
+df['manner'] = 0.0
+df['substitution'] = 0.0
+df['majority_level_1']= df['sense1']
+df['temporal'] = 0.0
+df['contingency'] = 0.0
+df['comparison'] = 0.0
+df['expansion'] = 0.0
+
+df.loc[df['sense1'] == 'Temporal', 'temporal'] = 1.0
+df.loc[df['sense1'] == 'Contingency', 'contingency'] = 1.0
+df.loc[df['sense1'] == 'Comparison', 'comparison'] = 1.0
+df.loc[df['sense1'] == 'Expansion', 'expansion'] = 1.0
+df.loc[df['sense2'] == 'Synchronous', 'synchronous'] = 1.0
+df.loc[df['sense2'] == 'Asynchronous', 'asynchronous'] = 1.0
+df.loc[df['sense2'] == 'Cause', 'cause'] = 1.0
+df.loc[df['sense2'] == 'Condition', 'condition'] = 1.0
+df.loc[df['sense2'] == 'Purpose', 'purpose'] = 1.0
+df.loc[df['sense2'] == 'Concession', 'concession'] = 1.0
+df.loc[df['sense2'] == 'Contrast', 'contrast'] = 1.0
+df.loc[df['sense2'] == 'Similarity', 'similarity'] = 1.0
+df.loc[df['sense2'] == 'Conjunction', 'conjunction'] = 1.0
+df.loc[df['sense2'] == 'Equivalence', 'equivalence'] = 1.0
+df.loc[df['sense2'] == 'Instantiation', 'instantiation'] = 1.0
+df.loc[df['sense2'] == 'Level-of-detail', 'level-of-detail'] = 1.0
+df.loc[df['sense2'] == 'Manner', 'manner'] = 1.0
+df.loc[df['sense2'] == 'Substitution', 'substitution'] = 1.0
 
 df.sort_values(by=['file'], ascending=True, inplace=True)
 df.to_csv('Data/PDTB-3.0/pdtb_3.csv', index=False)
