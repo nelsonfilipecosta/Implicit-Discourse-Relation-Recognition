@@ -133,26 +133,45 @@ df_pdtb['expansion'] = df_pdtb['conjunction'] + df_pdtb['instantiation'] + df_pd
 df_discogem['majority_level_1'] = df_discogem[label_names_1].idxmax(axis=1)
 df_pdtb['majority_level_1'] = df_pdtb[label_names_1].idxmax(axis=1)
 
+df_discogem['synchronous_2'] = df_discogem['synchronous']
+df_discogem['contrast_2'] = df_discogem['contrast']
+df_discogem['similarity_2'] = df_discogem['similarity']
+df_discogem['conjunction_2'] = df_discogem['conjunction']
+df_discogem['equivalence_2'] = df_discogem['equivalence']
+df_discogem['substitution_2'] = df_discogem['substitution']
+df_pdtb['synchronous_2'] = df_pdtb['synchronous']
+df_pdtb['contrast_2'] = df_pdtb['contrast']
+df_pdtb['similarity_2'] = df_pdtb['similarity']
+df_pdtb['conjunction_2'] = df_pdtb['conjunction']
+df_pdtb['equivalence_2'] = df_pdtb['equivalence']
+df_pdtb['substitution_2'] = df_pdtb['substitution']
+
 df_discogem['norel'] = 0.0
+df_discogem['norel_1'] = 0.0
+df_discogem['norel_2'] = 0.0
 df_pdtb['norel'] = 0.0
+df_pdtb['norel_1'] = 0.0
+df_pdtb['norel_2'] = 0.0
 
 df_discogem = df_discogem[['itemid', 'arg1', 'arg2', 'arg1_arg2', 'majority_level_3', 'synchronous',
                            'precedence', 'succession', 'reason', 'result', 'arg1-as-cond', 'arg2-as-cond',
                            'arg1-as-goal', 'arg2-as-goal', 'arg1-as-denier', 'arg2-as-denier', 'contrast',
                            'similarity', 'conjunction', 'equivalence', 'arg1-as-instance', 'arg2-as-instance',
                            'arg1-as-detail', 'arg2-as-detail', 'arg1-as-manner', 'arg2-as-manner', 'substitution',
-                           'majority_level_2', 'asynchronous', 'cause', 'condition', 'purpose', 'concession',
-                           'instantiation', 'level-of-detail', 'manner', 'majority_level_1', 'temporal',
-                           'contingency', 'comparison', 'expansion', 'norel']]
+                           'norel', 'majority_level_2', 'synchronous_2', 'asynchronous', 'cause', 'condition',
+                           'purpose', 'concession', 'contrast_2', 'similarity_2', 'conjunction_2', 'equivalence_2',
+                           'instantiation', 'level-of-detail', 'manner', 'substitution_2', 'norel_2', 'majority_level_1',
+                           'temporal', 'contingency', 'comparison', 'expansion', 'norel_1']]
 
 df_pdtb = df_pdtb[['itemid', 'arg1', 'arg2', 'arg1_arg2', 'majority_level_3', 'synchronous',
                    'precedence', 'succession', 'reason', 'result', 'arg1-as-cond', 'arg2-as-cond',
                    'arg1-as-goal', 'arg2-as-goal', 'arg1-as-denier', 'arg2-as-denier', 'contrast',
                    'similarity', 'conjunction', 'equivalence', 'arg1-as-instance', 'arg2-as-instance',
                    'arg1-as-detail', 'arg2-as-detail', 'arg1-as-manner', 'arg2-as-manner', 'substitution',
-                   'majority_level_2', 'asynchronous', 'cause', 'condition', 'purpose', 'concession',
-                   'instantiation', 'level-of-detail', 'manner', 'majority_level_1', 'temporal',
-                   'contingency', 'comparison', 'expansion', 'norel']]
+                   'norel', 'majority_level_2', 'synchronous_2', 'asynchronous', 'cause', 'condition',
+                   'purpose', 'concession', 'contrast_2', 'similarity_2', 'conjunction_2', 'equivalence_2',
+                   'instantiation', 'level-of-detail', 'manner', 'substitution_2', 'norel_2', 'majority_level_1',
+                   'temporal', 'contingency', 'comparison', 'expansion', 'norel_1']]
 
 #####
 
@@ -186,21 +205,29 @@ df_norel = pd.DataFrame({
     'arg1-as-manner': 0.0,
     'arg2-as-manner': 0.0,
     'substitution': 0.0,
+    'norel': 1.0,
     'majority_level_2': 'norel',
+    'synchronous_2': 0.0,
     'asynchronous': 0.0,
     'cause': 0.0,
     'condition': 0.0,
     'purpose': 0.0,
     'concession': 0.0,
+    'contrast_2': 0.0,
+    'similarity_2': 0.0,
+    'conjunction_2': 0.0,
+    'equivalence_2': 0.0,
     'instantiation': 0.0,
     'level-of-detail': 0.0,
     'manner': 0.0,
+    'substitution_2': 0.0,
+    'norel_2': 1.0,
     'majority_level_1': 'norel',
     'temporal': 0.0,
     'contingency': 0.0,
     'comparison': 0.0,
     'expansion': 0.0,
-    'norel': 1.0
+    'norel_1': 1.0
 })
 
 #####
