@@ -232,7 +232,8 @@ df_norel = pd.DataFrame({
 
 #####
 
-df_discogem = pd.concat([df_discogem, df_norel], ignore_index=True)
+# uncomment for 'norel' data
+# df_discogem = pd.concat([df_discogem, df_norel], ignore_index=True)
 
 gs_test = ShuffleSplit(n_splits=1, test_size=0.21, random_state=17)
 train_idx, test_idx = next(gs_test.split(df_discogem, df_discogem['majority_level_3']))
