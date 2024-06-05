@@ -70,31 +70,6 @@ class Multi_IDDR_Classifier(torch.nn.Module):
         return logits
 
 
-def create_dataloader(path):
-    'Create dataloader class for multi-label implicit discourse relation recognition data splits.'
-    
-    # read pre-processed data
-    df = pd.read_csv(path)
-
-    # initialize tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    transformers.logging.set_verbosity_error() # remove model checkpoint warning
-
-    # prepare text encodings and labels
-    encodings = tokenizer(list(df['arg1_arg2']), truncation=True, padding=True)
-    labels = np.hstack((np.array(df.iloc[:,5:27]),   # level-3 columns
-                        np.array(df.iloc[:,29:43]),  # level-2 columns
-                        np.array(df.iloc[:,45:49]))) # level-1 columns
-
-    # generate datasets
-    dataset = Multi_IDDR_Dataset(encodings, labels)
-
-    # generate dataloaders
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
-
-    return dataloader
-
-
 def log_wandb(mode, js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, precision_2, recall_2, js_3, f1_score_3, precision_3, recall_3, loss=None):
     'Log metrics on Weights & Biases.'
 
@@ -125,6 +100,31 @@ def log_wandb(mode, js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, p
                    mode + ' F1 Score (Level-3)'   : f1_score_3,
                    mode + ' Precision (Level-3)'  : precision_3,
                    mode + ' Recall (Level-3)'     : recall_3})
+
+
+def create_dataloader(path):
+    'Create dataloader class for multi-label implicit discourse relation recognition data splits.'
+    
+    # read pre-processed data
+    df = pd.read_csv(path)
+
+    # initialize tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    transformers.logging.set_verbosity_error() # remove model checkpoint warning
+
+    # prepare text encodings and labels
+    encodings = tokenizer(list(df['arg1_arg2']), truncation=True, padding=True)
+    labels = np.hstack((np.array(df.iloc[:,5:27]),   # level-3 columns
+                        np.array(df.iloc[:,29:43]),  # level-2 columns
+                        np.array(df.iloc[:,45:49]))) # level-1 columns
+
+    # generate datasets
+    dataset = Multi_IDDR_Dataset(encodings, labels)
+
+    # generate dataloaders
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+    return dataloader
 
 
 def get_loss(predictions, labels):
