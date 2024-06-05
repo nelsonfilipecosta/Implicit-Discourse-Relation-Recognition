@@ -17,8 +17,8 @@ EPOCHS = 10
 BATCH_SIZE = 16
 
 NUMBER_OF_SENSES = {'level_1': 5,
-                    'level_2': 8,
-                    'level_3': 22}
+                    'level_2': 15,
+                    'level_3': 23}
 
 LEARNING_RATE = 1e-5
 
@@ -40,9 +40,9 @@ class Multi_IDDR_Dataset(torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         item = {key: torch.tensor(value[idx]) for key, value in self.encodings.items()}
-        item['labels_level_3'] = torch.tensor(self.labels[idx,0:22])  # level-3 columns
-        item['labels_level_2'] = torch.tensor(self.labels[idx,22:30]) # level-2 columns
-        item['labels_level_1'] = torch.tensor(self.labels[idx,30:35]) # level-1 columns
+        item['labels_level_3'] = torch.tensor(self.labels[idx,0:23])  # level-3 columns
+        item['labels_level_2'] = torch.tensor(self.labels[idx,23:38]) # level-2 columns
+        item['labels_level_1'] = torch.tensor(self.labels[idx,38:43]) # level-1 columns
         return item
 
     def __len__(self):
@@ -81,9 +81,9 @@ def create_dataloader(path):
 
     # prepare text encodings and labels
     encodings = tokenizer(list(df['arg1_arg2']), truncation=True, padding=True)
-    labels = np.hstack((np.array(df.iloc[:,5:27]),   # level-3 columns
-                        np.array(df.iloc[:,28:36]),  # level-2 columns
-                        np.array(df.iloc[:,37:42]))) # level-1 columns
+    labels = np.hstack((np.array(df.iloc[:,5:28]),   # level-3 columns
+                        np.array(df.iloc[:,29:44]),  # level-2 columns
+                        np.array(df.iloc[:,45:50]))) # level-1 columns
 
     # generate datasets
     dataset = Multi_IDDR_Dataset(encodings, labels)
