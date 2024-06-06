@@ -21,6 +21,8 @@ NUMBER_OF_SENSES = {'level_1': 4,
                     'level_2': 14,
                     'level_3': 22}
 
+LOSS = 'cross-entropy'
+
 LEARNING_RATE = 1e-5
 
 WANDB = 1 # set 1 for logging and 0 for local runs
@@ -29,7 +31,8 @@ if WANDB == 1:
     run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
                                                  'Epochs': EPOCHS,
                                                  'Batch Size': BATCH_SIZE,
-                                                 'Learning Rate': LEARNING_RATE})
+                                                 'Learning Rate': LEARNING_RATE,
+                                                 'Loss': LOSS})
 
 
 class Multi_IDDR_Dataset(torch.utils.data.Dataset):
@@ -320,10 +323,17 @@ validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
 test_loader       = create_dataloader('Data/DiscoGeM/discogem_test.csv')
 
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
-loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
-# loss_function = torch.nn.L1Loss(reduction='mean')
-# loss_function = torch.nn.MSELoss(reduction='mean')
-# loss_function = torch.nn.SmoothL1Loss(reduction='mean')
+
+if LOSS == 'cross-entropy':
+    print('cross-entropy')
+    loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
+elif LOSS == 'l1':
+    loss_function = torch.nn.L1Loss(reduction='mean')
+elif LOSS == 'l2':
+    loss_function = torch.nn.MSELoss(reduction='mean')
+else:
+    loss_function = torch.nn.SmoothL1Loss(reduction='mean')
+
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
 # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
 # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, nesterov=False)
