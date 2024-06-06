@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import wandb
 import pandas as pd
@@ -21,7 +22,10 @@ NUMBER_OF_SENSES = {'level_1': 4,
                     'level_2': 14,
                     'level_3': 22}
 
-LOSS = 'cross-entropy'
+LOSS = sys.argv[1]
+if LOSS not in ['cross-entropy', 'l1', 'l2', 'smooth-l1']:
+    print('Type a valid loss: cross-entropy, l1, l2 or smooth-loss.')
+    exit()
 
 LEARNING_RATE = 1e-5
 
@@ -325,7 +329,6 @@ test_loader       = create_dataloader('Data/DiscoGeM/discogem_test.csv')
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
 
 if LOSS == 'cross-entropy':
-    print('cross-entropy')
     loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
 elif LOSS == 'l1':
     loss_function = torch.nn.L1Loss(reduction='mean')
