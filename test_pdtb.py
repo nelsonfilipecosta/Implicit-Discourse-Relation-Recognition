@@ -129,7 +129,7 @@ ji_loader       = create_dataloader('Data/PDTB-3.0/pdtb_3_ji.csv')
 balanced_loader = create_dataloader('Data/PDTB-3.0/pdtb_3_balanced.csv')
 
 model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
-model.load_state_dict(torch.load('Model/'+MODEL_NAME+'.pth'))
+model.load_state_dict(torch.load('Model/model.pth'))
 
 print('Testing Lin split...')
 test_loop('Lin', lin_loader)
