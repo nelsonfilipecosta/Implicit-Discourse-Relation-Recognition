@@ -9,7 +9,6 @@ from sklearn import metrics
 
 
 BATCH_SIZE = 16
-
 NUMBER_OF_SENSES = {'level_1': 4,
                     'level_2': 14,
                     'level_3': 22}
