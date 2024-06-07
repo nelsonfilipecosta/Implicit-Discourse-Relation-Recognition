@@ -119,8 +119,8 @@ def test_loop(mode, dataloader):
             predictions_l1.extend(torch.argmax(model_output['classifier_level_1'], dim=1).tolist())
             predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
 
-    f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
-    f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
+    get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
+    get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
 
 
 lin_loader      = create_dataloader('Data/PDTB-3.0/pdtb_3_lin.csv')
