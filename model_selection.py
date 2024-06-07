@@ -14,10 +14,8 @@ from scipy.stats import entropy
 from scipy.spatial.distance import jensenshannon
 
 
-MODEL_NAME = 'roberta-base'
 EPOCHS = 10
 BATCH_SIZE = 16
-
 NUMBER_OF_SENSES = {'level_1': 4,
                     'level_2': 14,
                     'level_3': 22}
@@ -323,7 +321,6 @@ def test_loop(mode, dataloader):
         log_wandb(mode, js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, precision_2, recall_2, js_3, f1_score_3, precision_3, recall_3)
 
 
-
 for i in range(3):
 
     if WANDB == 1:
@@ -331,8 +328,9 @@ for i in range(3):
         run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
                                                      'Epochs': EPOCHS,
                                                      'Batch Size': BATCH_SIZE,
-                                                     'Learning Rate': LEARNING_RATE,
-                                                     'Loss': LOSS})
+                                                     'Loss': LOSS,
+                                                     'Optimizer': OPTIMIZER,
+                                                     'Learning Rate': LEARNING_RATE})
     
     train_loader      = create_dataloader('Data/DiscoGeM/discogem_train.csv')
     validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
@@ -368,7 +366,7 @@ for i in range(3):
         test_loop('Validation', validation_loader)
     
     # save model configuration
-    folder = 'Model_'+MODEL_NAME+'_'+LOSS+'_'+OPTIMIZER+'_'+str(i+1)
+    folder = 'Model_'+MODEL_NAME+'_'+LOSS+'_'+OPTIMIZER+'_'+str(LEARNING_RATE)+'_'+str(i+1)
     if not os.path.exists(folder):
         os.makedirs(folder)
     torch.save(model_dict, folder+'/model.pth')
