@@ -32,12 +32,15 @@ if LOSS not in ['cross-entropy', 'l1', 'l2', 'smooth-l1']:
     print('Type a valid loss: cross-entropy, l1, l2 or smooth-loss.')
     exit()
 
-OPTIMIZER = LOSS = sys.argv[3]
+OPTIMIZER = sys.argv[3]
 if OPTIMIZER not in ['adam', 'adamw', 'sgd', 'rms']:
     print('Type a valid optimizer: adam, adamw, sgd or rms.')
     exit()
 
-LEARNING_RATE = 1e-5
+LEARNING_RATE = float(sys.argv[4])
+if LEARNING_RATE not in [1e-4, 1e-5, 1e-6]:
+    print('Type a valid learning rate: 1e-4, 1e-5 or 1e-6.')
+    exit()
 
 WANDB = 1 # set 1 for logging and 0 for local runs
 
