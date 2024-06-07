@@ -32,6 +32,11 @@ if LOSS not in ['cross-entropy', 'l1', 'l2', 'smooth-l1']:
     print('Type a valid loss: cross-entropy, l1, l2 or smooth-loss.')
     exit()
 
+OPTIMIZER = LOSS = sys.argv[3]
+if OPTIMIZER not in ['adam', 'adamw', 'sgd', 'rms']:
+    print('Type a valid optimizer: adam, adamw, sgd or rms.')
+    exit()
+
 LEARNING_RATE = 1e-5
 
 WANDB = 1 # set 1 for logging and 0 for local runs
@@ -332,6 +337,7 @@ for i in range(3):
 
     model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
 
+    # choose loss
     if LOSS == 'cross-entropy':
         loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
     elif LOSS == 'l1':
@@ -341,10 +347,15 @@ for i in range(3):
     else:
         loss_function = torch.nn.SmoothL1Loss(reduction='mean')
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
-    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
-    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, nesterov=False)
-    # optimizer = torch.optim.RMSprop(model.parameters(), lr=LEARNING_RATE)
+    # choose optimizer
+    if OPTIMIZER == 'adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
+    elif OPTIMIZER == 'adamw':
+        optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
+    elif OPTIMIZER == 'sgd':
+        optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, nesterov=False)
+    else:
+        optimizer = torch.optim.RMSprop(model.parameters(), lr=LEARNING_RATE)
 
     print('Starting training...')
     start_time = time.time()
@@ -354,9 +365,10 @@ for i in range(3):
         test_loop('Validation', validation_loader)
     
     # save model configuration
-    if not os.path.exists('Model_'+MODEL_NAME+'_'+LOSS+'_'+str(i+1)):
-        os.makedirs('Model_'+MODEL_NAME+'_'+LOSS+'_'+str(i+1))
-    torch.save(model_dict, 'Model_'+MODEL_NAME+'_'+LOSS+'_'+str(i+1)+'/'+MODEL_NAME+'.pth')
+    folder = 'Model_'+MODEL_NAME+'_'+LOSS+'_'+OPTIMIZER+'_'+str(i+1)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    torch.save(model_dict, folder+'/model.pth')
 
     test_loop('Testing', test_loader)
 
