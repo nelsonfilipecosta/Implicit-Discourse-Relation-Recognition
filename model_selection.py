@@ -22,7 +22,12 @@ NUMBER_OF_SENSES = {'level_1': 4,
                     'level_2': 14,
                     'level_3': 22}
 
-LOSS = sys.argv[1]
+MODEL_NAME = sys.argv[1]
+if MODEL_NAME not in ['bert-base-uncased', 'distilbert-base-uncased', 'roberta-base', 'distilroberta-base']:
+    print('Type a valid model name: bert-base-uncased, distilbert-base-uncased, roberta-base or distilroberta-base.')
+    exit()
+
+LOSS = sys.argv[2]
 if LOSS not in ['cross-entropy', 'l1', 'l2', 'smooth-l1']:
     print('Type a valid loss: cross-entropy, l1, l2 or smooth-loss.')
     exit()
@@ -30,13 +35,6 @@ if LOSS not in ['cross-entropy', 'l1', 'l2', 'smooth-l1']:
 LEARNING_RATE = 1e-5
 
 WANDB = 1 # set 1 for logging and 0 for local runs
-if WANDB == 1:
-    wandb.login()
-    run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
-                                                 'Epochs': EPOCHS,
-                                                 'Batch Size': BATCH_SIZE,
-                                                 'Learning Rate': LEARNING_RATE,
-                                                 'Loss': LOSS})
 
 
 class Multi_IDDR_Dataset(torch.utils.data.Dataset):
@@ -268,10 +266,7 @@ def train_loop(dataloader):
             if WANDB == 1:
                 log_wandb('Training', js_1, f1_score_1, precision_1, recall_1, js_2, f1_score_2, precision_2, recall_2, js_3, f1_score_3, precision_3, recall_3, loss)
     
-    # save model configuration
-    if not os.path.exists('Model'):
-        os.makedirs('Model')
-    torch.save(model.state_dict(), 'Model/'+MODEL_NAME+'.pth')
+    return model.state_dict()
 
 
 def test_loop(mode, dataloader):
@@ -321,34 +316,50 @@ def test_loop(mode, dataloader):
 
 
 
+for i in range(3):
 
-train_loader      = create_dataloader('Data/DiscoGeM/discogem_train.csv')
-validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
-test_loader       = create_dataloader('Data/DiscoGeM/discogem_test.csv')
+    if WANDB == 1:
+        wandb.login()
+        run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME,
+                                                     'Epochs': EPOCHS,
+                                                     'Batch Size': BATCH_SIZE,
+                                                     'Learning Rate': LEARNING_RATE,
+                                                     'Loss': LOSS})
+    
+    train_loader      = create_dataloader('Data/DiscoGeM/discogem_train.csv')
+    validation_loader = create_dataloader('Data/DiscoGeM/discogem_validation.csv')
+    test_loader       = create_dataloader('Data/DiscoGeM/discogem_test.csv')
 
-model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
+    model = Multi_IDDR_Classifier(MODEL_NAME, NUMBER_OF_SENSES)
 
-if LOSS == 'cross-entropy':
-    loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
-elif LOSS == 'l1':
-    loss_function = torch.nn.L1Loss(reduction='mean')
-elif LOSS == 'l2':
-    loss_function = torch.nn.MSELoss(reduction='mean')
-else:
-    loss_function = torch.nn.SmoothL1Loss(reduction='mean')
+    if LOSS == 'cross-entropy':
+        loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
+    elif LOSS == 'l1':
+        loss_function = torch.nn.L1Loss(reduction='mean')
+    elif LOSS == 'l2':
+        loss_function = torch.nn.MSELoss(reduction='mean')
+    else:
+        loss_function = torch.nn.SmoothL1Loss(reduction='mean')
 
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
-# optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
-# optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, nesterov=False)
-# optimizer = torch.optim.RMSprop(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, amsgrad=False)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, nesterov=False)
+    # optimizer = torch.optim.RMSprop(model.parameters(), lr=LEARNING_RATE)
 
-print('Starting training...')
-start_time = time.time()
+    print('Starting training...')
+    start_time = time.time()
 
-for epoch in range(EPOCHS):
-    train_loop(train_loader)
-    test_loop('Validation', validation_loader)
+    for epoch in range(EPOCHS):
+        model_dict = train_loop(train_loader)
+        test_loop('Validation', validation_loader)
+    
+    # save model configuration
+    if not os.path.exists('Model_'+MODEL_NAME+'_'+LOSS+'_'+str(i+1)):
+        os.makedirs('Model_'+MODEL_NAME+'_'+LOSS+'_'+str(i+1))
+    torch.save(model_dict, 'Model_'+MODEL_NAME+'_'+LOSS+'_'+str(i+1)+'/'+MODEL_NAME+'.pth')
 
-test_loop('Testing', test_loader)
+    test_loop('Testing', test_loader)
 
-print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
+    print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
+
+    wandb.finish()
