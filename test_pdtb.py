@@ -1,4 +1,4 @@
-import wandb
+import sys
 import pandas as pd
 import numpy as np
 import torch
@@ -8,18 +8,16 @@ from transformers import AutoModel
 from sklearn import metrics
 
 
-MODEL_NAME = 'roberta-base'
 BATCH_SIZE = 16
 
 NUMBER_OF_SENSES = {'level_1': 4,
                     'level_2': 14,
                     'level_3': 22}
 
-
-WANDB = 0 # set 1 for logging and 0 for local runs
-if WANDB == 1:
-    wandb.login()
-    run = wandb.init(project = 'IDRR', config = {'Model': MODEL_NAME})
+MODEL_NAME = sys.argv[1]
+if MODEL_NAME not in ['bert-base-uncased', 'distilbert-base-uncased', 'roberta-base', 'distilroberta-base']:
+    print('Type a valid model name: bert-base-uncased, distilbert-base-uncased, roberta-base or distilroberta-base.')
+    exit()
 
 
 class Multi_IDDR_Dataset(torch.utils.data.Dataset):
@@ -61,17 +59,6 @@ class Multi_IDDR_Classifier(torch.nn.Module):
                   'classifier_level_2': self.classifier_level_2(output),
                   'classifier_level_3': self.classifier_level_3(output)}
         return logits
-
-
-def log_wandb(mode, f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2, f1_score_3, precision_3, recall_3):
-    'Log metrics on Weights & Biases.'
-
-    wandb.log({mode + ' F1 Score (Level-1)'   : f1_score_1,
-               mode + ' Precision (Level-1)'  : precision_1,
-               mode + ' Recall (Level-1)'     : recall_1,
-               mode + ' F1 Score (Level-2)'   : f1_score_2,
-               mode + ' Precision (Level-2)'  : precision_2,
-               mode + ' Recall (Level-2)'     : recall_2})
 
 
 def create_dataloader(path):
@@ -135,9 +122,6 @@ def test_loop(mode, dataloader):
 
     f1_score_1, precision_1, recall_1 = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
     f1_score_2, precision_2, recall_2 = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
-    
-    if WANDB == 1:
-        log_wandb(mode, f1_score_1, precision_1, recall_1, f1_score_2, precision_2, recall_2)
 
 
 lin_loader      = create_dataloader('Data/PDTB-3.0/pdtb_3_lin.csv')
