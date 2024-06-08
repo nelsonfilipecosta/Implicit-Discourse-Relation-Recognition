@@ -52,9 +52,9 @@ class Multi_IDDR_Dataset(torch.utils.data.Dataset):
     
     def __getitem__(self, idx):
         item = {key: torch.tensor(value[idx]) for key, value in self.encodings.items()}
-        item['labels_level_3'] = torch.tensor(self.labels[idx,0:22])  # level-3 columns
-        item['labels_level_2'] = torch.tensor(self.labels[idx,22:36]) # level-2 columns
-        item['labels_level_1'] = torch.tensor(self.labels[idx,36:40]) # level-1 columns
+        item['labels_level_3'] = torch.tensor(self.labels[idx,0:22], dtype=torch.float32)  # level-3 columns
+        item['labels_level_2'] = torch.tensor(self.labels[idx,22:36], dtype=torch.float32) # level-2 columns
+        item['labels_level_1'] = torch.tensor(self.labels[idx,36:40], dtype=torch.float32) # level-1 columns
         return item
 
     def __len__(self):
