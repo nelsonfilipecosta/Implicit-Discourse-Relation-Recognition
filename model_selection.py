@@ -27,7 +27,7 @@ if MODEL_NAME not in ['bert-base-uncased', 'distilbert-base-uncased', 'roberta-b
 
 LOSS = sys.argv[2]
 if LOSS not in ['cross-entropy', 'l1', 'l2', 'smooth-l1']:
-    print('Type a valid loss: cross-entropy, l1, l2 or smooth-loss.')
+    print('Type a valid loss: cross-entropy, l1, l2 or smooth-l1.')
     exit()
 
 OPTIMIZER = sys.argv[3]
