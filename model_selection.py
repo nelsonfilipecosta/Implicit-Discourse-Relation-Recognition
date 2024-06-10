@@ -36,8 +36,8 @@ if OPTIMIZER not in ['adam', 'adamw', 'sgd', 'rms']:
     exit()
 
 LEARNING_RATE = float(sys.argv[4])
-if LEARNING_RATE not in [1e-4, 1e-5, 1e-6]:
-    print('Type a valid learning rate: 1e-4, 1e-5 or 1e-6.')
+if LEARNING_RATE not in [1e-4, 5e-5, 1e-5, 5e-6, 1e-6]:
+    print('Type a valid learning rate: 1e-4, 5e-5, 1e-5, 5e-6 or 1e-6.')
     exit()
 
 WANDB = 1 # set 1 for logging and 0 for local runs
