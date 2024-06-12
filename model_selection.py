@@ -40,6 +40,11 @@ if LEARNING_RATE not in [1e-4, 5e-5, 1e-5, 5e-6, 1e-6]:
     print('Type a valid learning rate: 1e-4, 5e-5, 1e-5, 5e-6 or 1e-6.')
     exit()
 
+SCHEDULER = sys.argv[5]
+if SCHEDULER not in ['linear', 'cosine']:
+    print('Type a valid scheduler: linear or cosine.')
+    exit()
+
 WANDB = 1 # set 1 for logging and 0 for local runs
 
 
@@ -249,6 +254,7 @@ def train_loop(dataloader):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         # log results every 10 batches
         if not batch_idx % 10:
@@ -357,6 +363,12 @@ for i in range(3):
         optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE, nesterov=False)
     else:
         optimizer = torch.optim.RMSprop(model.parameters(), lr=LEARNING_RATE)
+    
+    # choose scheduler
+    if SCHEDULER == 'linear':
+        scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1, end_factor=0.5, total_iters=int(EPOCHS/2))
+    else:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, int(EPOCHS/3), eta_min=0.5*LEARNING_RATE)
 
     print('Starting training...')
     start_time = time.time()
