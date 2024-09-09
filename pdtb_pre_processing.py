@@ -208,6 +208,37 @@ df_balanced.sort_values(by=['file'], ascending=True, inplace=True)
 df_balanced.to_csv('Data/PDTB-3.0/pdtb_3_balanced.csv', index=False)
 print(f"Done.")
 
+print(f"Preparing cross-validation partitions of the PDTB 3.0 corpus...")
+
+sections = ['00', '01', '02', '03', '04', '05', '06', '07', '08',
+            '09', '10', '11', '12', '13', '14', '15', '16', '17',
+            '18', '19', '20', '21', '22', '23', '24']
+
+val_sections = []
+test_sections = []
+train_sections = []
+
+for i in range(0, 25, 2):
+    val_sections.append([sections[i], sections[(i + 1) % 25]])
+    test_sections.append([sections[(i + 23) % 25], sections[(i + 24) % 25]])
+    train_sections.append([sections[(i + j) % 25] for j in range(2, 23)])
+
+if not os.path.exists('Data/PDTB-3.0/Cross-Validation'):
+       os.makedirs('Data/PDTB-3.0/Cross-Validation')
+
+for i in range (0,13):
+    df_val_cross = df[df['folder'].isin(val_sections[i])]
+    df_test_cross = df[df['folder'].isin(test_sections[i])]
+    df_train_cross = df[df['folder'].isin(train_sections[i])]
+
+    if not os.path.exists('Data/PDTB-3.0/Cross-Validation/Fold_' + str(i)):
+       os.makedirs('Data/PDTB-3.0/Cross-Validation/Fold_' + str(i))
+
+    df_val_cross.to_csv('Data/PDTB-3.0/Cross-Validation/Fold_' + str(i) + '/validation.csv', index=False)
+    df_test_cross.to_csv('Data/PDTB-3.0/Cross-Validation/Fold_' + str(i) + '/test.csv', index=False)
+    df_train_cross.to_csv('Data/PDTB-3.0/Cross-Validation/Fold_' + str(i) + '/train.csv', index=False)
+
+print(f"Done.")
 
 # !!! UNCOMMENT TO CHECK SPECIFIC DOCUMENT !!! #
 
