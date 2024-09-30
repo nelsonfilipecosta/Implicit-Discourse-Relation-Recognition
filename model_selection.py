@@ -281,7 +281,7 @@ def train_loop(dataloader):
     return model.state_dict()
 
 
-def test_loop(mode, dataloader):
+def test_loop(mode, dataloader, iteration=None):
     'Validation and test loop of the classification model.'
 
     # group metric across all batches
@@ -317,16 +317,16 @@ def test_loop(mode, dataloader):
 
     if not os.path.exists('Results'):
         os.makedirs('Results')
-    if not os.path.exists('Results/DiscoGeM'):
-        os.makedirs('Results/DiscoGeM')
+    if not os.path.exists('Results/DiscoGeM_' + str(iteration)):
+        os.makedirs('Results/DiscoGeM_' + str(iteration))
 
     if mode == 'Testing':
-        np.savetxt('Results/DiscoGeM/labels_l1.txt', np.array(labels_l1), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/labels_l2.txt', np.array(labels_l2), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/labels_l3.txt', np.array(labels_l3), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/predictions_l1.txt', np.array(predictions_l1), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/predictions_l2.txt', np.array(predictions_l2), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/predictions_l2.txt', np.array(predictions_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM_' + str(iteration) + '/labels_l1.txt', np.array(labels_l1), delimiter = ',')
+        np.savetxt('Results/DiscoGeM_' + str(iteration) + '/labels_l2.txt', np.array(labels_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM_' + str(iteration) + '/labels_l3.txt', np.array(labels_l3), delimiter = ',')
+        np.savetxt('Results/DiscoGeM_' + str(iteration) + '/predictions_l1.txt', np.array(predictions_l1), delimiter = ',')
+        np.savetxt('Results/DiscoGeM_' + str(iteration) + '/predictions_l2.txt', np.array(predictions_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM_' + str(iteration) + '/predictions_l3.txt', np.array(predictions_l3), delimiter = ',')
 
     js_1 = js_1 / len(dataloader)
     js_2 = js_2 / len(dataloader)
@@ -396,7 +396,7 @@ for i in range(3):
         os.makedirs(folder)
     torch.save(model_dict, folder+'/model.pth')
 
-    test_loop('Testing', test_loader)
+    test_loop('Testing', test_loader, i)
 
     print(f'Total training time: {(time.time()-start_time)/60:.2f} minutes')
 
