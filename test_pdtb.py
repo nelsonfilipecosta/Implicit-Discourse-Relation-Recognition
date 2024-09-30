@@ -1,6 +1,8 @@
+import os
 import sys
 import pandas as pd
 import numpy as np
+import statistics
 import torch
 import transformers
 from transformers import AutoTokenizer
@@ -119,8 +121,10 @@ def test_loop(mode, dataloader):
             predictions_l1.extend(torch.argmax(model_output['classifier_level_1'], dim=1).tolist())
             predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
 
-    get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
-    get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
+    f1_l1, _, _ = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
+    f1_l2, _, _ = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
+
+    return f1_l1, f1_l2
 
 
 lin_loader      = create_dataloader('Data/PDTB-3.0/pdtb_3_lin.csv')
@@ -138,3 +142,17 @@ test_loop('Ji', ji_loader)
 
 print('Testing Balanced split...')
 test_loop('Balanced', balanced_loader)
+
+print('Testing Cross split...')
+list_f1_l1 = []
+list_f1_l2 = []
+for i in range(13):
+    print('Fold ' + str(i))
+    cross_loader = create_dataloader('Data/PDTB-3.0/Cross-Validation/Fold_' + str(i) + '/test.csv')
+    f1_l1, f1_l2 = test_loop('Cross', cross_loader)
+    list_f1_l1.append(f1_l1)
+    list_f1_l2.append(f1_l2)
+    print(f1_l1)
+    print(f1_l2)
+print(f'Level-1 || F1 Score: {statistics.mean(list_f1_l1):.4f} +/- {statistics.stdev(list_f1_l1):.4f}')
+print(f'Level-2 || F1 Score: {statistics.mean(list_f1_l2):.4f} +/- {statistics.stdev(list_f1_l2):.4f}')
