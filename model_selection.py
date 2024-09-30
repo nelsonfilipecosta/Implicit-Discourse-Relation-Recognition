@@ -315,6 +315,19 @@ def test_loop(mode, dataloader):
             predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
             predictions_l3.extend(torch.argmax(model_output['classifier_level_3'], dim=1).tolist())
 
+    if not os.path.exists('Results'):
+        os.makedirs('Results')
+    if not os.path.exists('Results/DiscoGeM'):
+        os.makedirs('Results/DiscoGeM')
+
+    if mode == 'Testing':
+        np.savetxt('Results/DiscoGeM/labels_l1.txt', np.array(labels_l1), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/labels_l2,txt', np.array(labels_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/labels_l3,txt', np.array(labels_l3), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/predictions_l1.txt', np.array(predictions_l1), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/predictions_l2,txt', np.array(predictions_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/predictions_l2,txt', np.array(predictions_l2), delimiter = ',')
+
     js_1 = js_1 / len(dataloader)
     js_2 = js_2 / len(dataloader)
     js_3 = js_3 / len(dataloader)

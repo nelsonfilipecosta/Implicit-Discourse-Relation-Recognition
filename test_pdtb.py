@@ -121,6 +121,24 @@ def test_loop(mode, dataloader):
             predictions_l1.extend(torch.argmax(model_output['classifier_level_1'], dim=1).tolist())
             predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
 
+    if not os.path.exists('Results'):
+        os.makedirs('Results')
+
+    if mode == 'Lin':
+        if not os.path.exists('Results/Lin'):
+            os.makedirs('Results/Lin')
+        np.savetxt('Results/Lin/labels_l1.txt', np.array(labels_l1), delimiter = ',')
+        np.savetxt('Results/Lin/labels_l2,txt', np.array(labels_l2), delimiter = ',')
+        np.savetxt('Results/Lin/predictions_l1.txt', np.array(predictions_l1), delimiter = ',')
+        np.savetxt('Results/Lin/predictions_l2,txt', np.array(predictions_l2), delimiter = ',')
+    elif mode == 'Ji':
+        if not os.path.exists('Results/Ji'):
+            os.makedirs('Results/Ji')
+        np.savetxt('Results/Ji/labels_l1.txt', np.array(labels_l1), delimiter = ',')
+        np.savetxt('Results/Ji/labels_l2,txt', np.array(labels_l2), delimiter = ',')
+        np.savetxt('Results/Ji/predictions_l1.txt', np.array(predictions_l1), delimiter = ',')
+        np.savetxt('Results/Ji/predictions_l2,txt', np.array(predictions_l2), delimiter = ',')    
+
     f1_l1, _, _ = get_single_metrics('Level-1', np.array(labels_l1), np.array(predictions_l1))
     f1_l2, _, _ = get_single_metrics('Level-2', np.array(labels_l2), np.array(predictions_l2))
 
