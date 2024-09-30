@@ -4,6 +4,7 @@ Bonnie/*
 Corpora/*
 Data/*
 Model/*
+Results/*
 wandb/*
 stats.py
 
