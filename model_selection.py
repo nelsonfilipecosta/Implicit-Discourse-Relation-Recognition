@@ -322,11 +322,11 @@ def test_loop(mode, dataloader):
 
     if mode == 'Testing':
         np.savetxt('Results/DiscoGeM/labels_l1.txt', np.array(labels_l1), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/labels_l2,txt', np.array(labels_l2), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/labels_l3,txt', np.array(labels_l3), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/labels_l2.txt', np.array(labels_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/labels_l3.txt', np.array(labels_l3), delimiter = ',')
         np.savetxt('Results/DiscoGeM/predictions_l1.txt', np.array(predictions_l1), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/predictions_l2,txt', np.array(predictions_l2), delimiter = ',')
-        np.savetxt('Results/DiscoGeM/predictions_l2,txt', np.array(predictions_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/predictions_l2.txt', np.array(predictions_l2), delimiter = ',')
+        np.savetxt('Results/DiscoGeM/predictions_l2.txt', np.array(predictions_l2), delimiter = ',')
 
     js_1 = js_1 / len(dataloader)
     js_2 = js_2 / len(dataloader)
