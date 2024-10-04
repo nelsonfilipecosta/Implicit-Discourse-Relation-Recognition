@@ -315,10 +315,11 @@ def test_loop(mode, dataloader, iteration=None):
             predictions_l2.extend(torch.argmax(model_output['classifier_level_2'], dim=1).tolist())
             predictions_l3.extend(torch.argmax(model_output['classifier_level_3'], dim=1).tolist())
 
-    if not os.path.exists('Results'):
-        os.makedirs('Results')
-    if not os.path.exists('Results/DiscoGeM_' + str(iteration)):
-        os.makedirs('Results/DiscoGeM_' + str(iteration))
+    if i != None:
+        if not os.path.exists('Results'):
+            os.makedirs('Results')
+        if not os.path.exists('Results/DiscoGeM_' + str(iteration)):
+            os.makedirs('Results/DiscoGeM_' + str(iteration))
 
     if mode == 'Testing':
         np.savetxt('Results/DiscoGeM_' + str(iteration) + '/labels_l1.txt', np.array(labels_l1), delimiter = ',')
