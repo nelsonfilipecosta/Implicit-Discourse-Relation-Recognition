@@ -71,12 +71,15 @@ def plot_cm(level, split, labels, predictions):
     plt.yticks(ticks=np.arange(len(senses)) + 0.5, labels=senses, rotation=0)
 
     plt.tight_layout()
-    plt.savefig('Results/Confusion Matrices/confusion_matrix_'+ split + '_l' + str(level) + '_'+ str(MODEL) +'.png', format='png', dpi=300, bbox_inches='tight')
+    plt.savefig('Results/Confusion Matrices/confusion_matrix_'+ split + '_l' + str(level) + '_'+ str(MODEL) +'.png', format='png', dpi=900, bbox_inches='tight')
     plt.show()
 
 
 if not os.path.exists('Results/Confusion Matrices'):
     os.makedirs('Results/Confusion Matrices')
+
+plt.rcParams['font.size'] = 12
+plt.rcParams['font.family'] = 'Times New Roman'
 
 labels_1 = []
 predictions_1 = []
@@ -97,12 +100,3 @@ for i in range(len(listdir_nohidden('Results/'+folder))):
     predictions_2.append(np.loadtxt('Results/'+folder+'/'+folder+'_'+str(i)+'/predictions_l2.txt').astype(int))
 
 plot_cm(2, SPLIT, labels_2[MODEL-1], predictions_2[MODEL-1])
-
-
-# # check labels
-# print()
-# print('Level-2')
-# print()
-# for i in range(len(labels_2)):
-#     unique, counts = np.unique(labels_2[i], return_counts=True)
-#     print(np.asarray((unique, counts)).T)
