@@ -178,9 +178,8 @@ for i in range(len(listdir_nohidden('Results/'+folder))):
 
 f1_scores_1 = np.array(f1_scores_1)
 
-# for i in range(f1_scores_1.shape[1]):
-#     print(f1_scores_1[:,i])
-#     print(str(round(np.mean(f1_scores_1[:,i])*100, 2)) + ' +- ' + str(round(np.std(f1_scores_1[:,i])*100, 2)))
+for i in range(f1_scores_1.shape[1]):
+    print(str(round(np.mean(f1_scores_1[:,i])*100, 2)) + ' +- ' + str(round(np.std(f1_scores_1[:,i])*100, 2)))
 
 ################
 
@@ -196,52 +195,33 @@ for i in range(len(listdir_nohidden('Results/'+folder))):
 
 f1_scores_2 = np.array(f1_scores_2)
 
-# for i in range(f1_scores_2.shape[1]):
-#     print(f1_scores_2[:,i])
-#     print(str(round(np.mean(f1_scores_2[:,i])*100, 2)) + ' +- ' + str(round(np.std(f1_scores_2[:,i])*100, 2)))
+for i in range(f1_scores_2.shape[1]):
+    print(str(round(np.mean(f1_scores_2[:,i])*100, 2)) + ' +- ' + str(round(np.std(f1_scores_2[:,i])*100, 2)))
 
 ################
 
 temporal, contingency, comparison, expansion = get_inconsistencies_l1(predictions_1, predictions_2)
 
-print(temporal)
 print(f'Temporal: {statistics.mean(temporal):.2f} +/- {statistics.stdev(temporal):.2f}')
-print(contingency)
 print(f'Contingency: {statistics.mean(contingency):.2f} +/- {statistics.stdev(contingency):.2f}')
-print(comparison)
 print(f'Comparison: {statistics.mean(comparison):.2f} +/- {statistics.stdev(comparison):.2f}')
-print(expansion)
 print(f'Expansion: {statistics.mean(expansion):.2f} +/- {statistics.stdev(expansion):.2f}')
 
 print('\n')
 
 synchronous, asynchronous, cause, condition, purpose, concession, contrast, similarity, conjunction, equivalence, instantiation, detail, manner, substitution = get_inconsistencies_l2(predictions_1, predictions_2)
 
-print(synchronous)
 print(f'Synchronous: {statistics.mean(synchronous):.2f} +/- {statistics.stdev(synchronous):.2f}')
-print(asynchronous)
 print(f'Asynchronous: {statistics.mean(asynchronous):.2f} +/- {statistics.stdev(asynchronous):.2f}')
-print(cause)
 print(f'Cause: {statistics.mean(cause):.2f} +/- {statistics.stdev(cause):.2f}')
-print(condition)
 print(f'Condition: {statistics.mean(condition):.2f} +/- {statistics.stdev(condition):.2f}')
-print(purpose)
 print(f'Purpose: {statistics.mean(purpose):.2f} +/- {statistics.stdev(purpose):.2f}')
-print(concession)
 print(f'Concession: {statistics.mean(concession):.2f} +/- {statistics.stdev(concession):.2f}')
-print(contrast)
 print(f'Contrast: {statistics.mean(contrast):.2f} +/- {statistics.stdev(contrast):.2f}')
-print(similarity)
 print(f'Similarity: {statistics.mean(similarity):.2f} +/- {statistics.stdev(similarity):.2f}')
-print(conjunction)
 print(f'Conjunction: {statistics.mean(conjunction):.2f} +/- {statistics.stdev(conjunction):.2f}')
-print(equivalence)
 print(f'Equivalence: {statistics.mean(equivalence):.2f} +/- {statistics.stdev(equivalence):.2f}')
-print(instantiation)
 print(f'Instantiation: {statistics.mean(instantiation):.2f} +/- {statistics.stdev(instantiation):.2f}')
-print(detail)
 print(f'Detail: {statistics.mean(detail):.2f} +/- {statistics.stdev(detail):.2f}')
-print(manner)
 print(f'Manner: {statistics.mean(manner):.2f} +/- {statistics.stdev(manner):.2f}')
-print(substitution)
 print(f'Substitution: {statistics.mean(substitution):.2f} +/- {statistics.stdev(substitution):.2f}')
